@@ -114,3 +114,36 @@ class Paddle(GameObject):
                 self.ball.move(offset, 0)
 
 
+    # FITUR BARU: pindahkan papan supaya titik tengahnya mengikuti
+    # posisi x kursor, tapi tetap dibatasi supaya tidak keluar layar
+    def move_to(self, x):
+        coords = self.get_position()
+        width = self.canvas.winfo_width()
+        center = (coords[0] + coords[2]) / 2
+        offset = x - center
+        if coords[0] + offset < 0:
+            offset = -coords[0]
+        elif coords[2] + offset > width:
+            offset = width - coords[2]
+        super(Paddle, self).move(offset, 0)
+        if self.ball is not None:
+            self.ball.move(offset, 0)
+
+
+class Brick(GameObject):
+    # Warna blok berdasarkan sisa "nyawa" blok
+    COLORS = {1: '#ff8c00', 2: '#ba55d3', 3: '#32cd32'}
+
+    def __init__(self, canvas, x, y, hits):
+        self.width = 75
+        self.height = 20
+        self.hits = hits
+        color = Brick.COLORS[hits]
+        item = canvas.create_rectangle(x - self.width / 2,
+                                       y - self.height / 2,
+                                       x + self.width / 2,
+                                       y + self.height / 2,
+                                       fill=color, outline=BG_COLOR,
+                                       width=2, tags='brick')
+        super(Brick, self).__init__(canvas, item)
+
