@@ -147,3 +147,58 @@ class Brick(GameObject):
                                        width=2, tags='brick')
         super(Brick, self).__init__(canvas, item)
 
+    # Mengembalikan True kalau blok hancur
+    def hit(self):
+        self.hits -= 1
+        if self.hits == 0:
+            self.delete()
+            return True
+        self.canvas.itemconfig(self.item,
+                               fill=Brick.COLORS[self.hits])
+        return False
+
+
+# Mencampur dua warna hex. t=0 -> warna a, t=1 -> warna b
+def blend(a, b, t):
+    ca = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    cb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    mix = [int(ca[k] + (cb[k] - ca[k]) * t) for k in range(3)]
+    return '#%02x%02x%02x' % tuple(mix)
+
+
+class BallEffects(object):
+    """Efek visual untuk bola: jejak (trail), percikan (particle),
+    dan warna bola. Semuanya berubah warna tiap kelipatan 30 skor."""
+
+    def __init__(self, canvas, ball):
+        self.canvas = canvas
+        self.ball = ball
+        self.level = 0
+        self.color = EFFECT_COLORS[0]
+        self.positions = []     # riwayat posisi bola untuk jejak
+        self.trail_items = []   # lingkaran-lingkaran jejak di canvas
+        self.particles = []     # percikan yang sedang aktif
+        self.apply_color()
+
+    # Mewarnai bola: inti bola dibuat versi pucat/terang dari warna efek
+    # (seperti api yang paling panas), sedangkan tepinya memakai warna
+    # efek yang pekat. Jadi bola terlihat menyala dan tidak menyatu
+    # dengan jejak/percikan yang berwarna pekat.
+    def apply_color(self):
+        self.canvas.itemconfig(self.ball.item,
+                               fill=blend(self.color, '#ffffff', 0.65),
+                               outline=self.color, width=3)
+
+    def center(self):
+        c = self.ball.get_position()
+        return (c[0] + c[2]) / 2, (c[1] + c[3]) / 2
+
+    # Dipanggil tiap skor berubah: ganti warna efek kalau naik 30 poin
+    def set_score(self, score):
+        level = score // EFFECT_STEP
+        if level != self.level:
+            self.level = level
+            self.color = EFFECT_COLORS[level % len(EFFECT_COLORS)]
+            self.apply_color()
+            self.burst(18, 9, 6)    # ledakan besar tanda warna berganti
+
